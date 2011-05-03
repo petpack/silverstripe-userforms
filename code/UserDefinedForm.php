@@ -64,6 +64,7 @@ class UserDefinedForm extends Page {
 	 * @return FieldSet
 	 */
 	public function getCMSFields() {
+		self::disableCMSFieldsExtensions();
 		$fields = parent::getCMSFields();
 
 		// define tabs
@@ -104,6 +105,9 @@ class UserDefinedForm extends Page {
 		
 		$fields->addFieldsToTab("Root.Content.OnComplete", $onCompleteFieldSet);
 		$fields->addFieldsToTab("Root.Content.Options", $this->getFormOptions());
+		
+		self::enableCMSFieldsExtensions();
+		$this->extend('updateCMSFields', $fields);
 		
 		return $fields;
 	}
@@ -324,7 +328,7 @@ class UserDefinedForm_Controller extends Page_Controller {
 	 * @return Array
 	 */
 	public function index() {
-		if($content = $this->Content) {
+		if($content = $this->Content()) {
 			$hasLocation = stristr($content, '$UserDefinedForm');
 			
 			if($hasLocation) {
@@ -642,6 +646,18 @@ JS
 	 * @return Redirection
 	 */
 	function process($data, $form) {
+		$submittedForm = $this->processUserDefinedForm($data, $form);
+		$referrer = (isset($data['Referrer'])) ? '?referrer=' . urlencode($data['Referrer']) : "";
+		return Director::redirect($this->Link() . 'finished' . $referrer);
+	}
+
+	/**
+	 * Process the Form Data.
+	 * @param Array Data
+	 * @param Form Form
+	 * @return SubmittedForm
+	 */
+	function processUserDefinedForm($data, $form) {
 		
 		$submittedForm = Object::create('SubmittedForm');
 		$submittedForm->SubmittedByID = ($id = Member::currentUserID()) ? $id : 0;
@@ -699,15 +715,12 @@ JS
 			$submittedFields->push($submittedField);
 		}
 		
-		$emailData = array(
-			"Sender" => Member::currentUser(),
-			"Fields" => $submittedFields
-		);
+		$emailData = $this->getEmailData($submittedFields);
 
 		// email users on submit.
 		if($this->EmailRecipients()) {
 			
-			$email = new UserDefinedForm_SubmittedFormEmail($submittedFields);                     
+			$email = $this->getSubmittedFormEmail($submittedFields);
 			$email->populateTemplate($emailData);
 			
 			if($attachments){
@@ -741,7 +754,7 @@ JS
 						$email->setTo($submittedFormField->Value);	
 					}
 				}
-				
+				$recipient->extend('onBeforeSend', $email);
 				if($recipient->SendPlain) {
 					$body = strip_tags($recipient->EmailBody) . "\n ";
 					if(isset($emailData['Fields']) && !$recipient->HideFormData) {
@@ -757,10 +770,24 @@ JS
 				}
 			}
 		}
-		
-		$referrer = (isset($data['Referrer'])) ? '?referrer=' . urlencode($data['Referrer']) : "";
-		
-		return Director::redirect($this->Link() . 'finished' . $referrer);
+		return $submittedForm;
+	}
+
+	/**
+	 * @param DataObjectSet $submittedFields
+	 */
+	function getEmailData( DataObjectSet $submittedFields ) {
+		return array(
+			"Sender" => Member::currentUser(),
+			"Fields" => $submittedFields
+		);
+	}
+
+	/**
+	 * @param DataObjectSet $submittedFields
+	 */
+	function getSubmittedFormEmail( DataObjectSet $submittedFields ) {
+		return new UserDefinedForm_SubmittedFormEmail($submittedFields);
 	}
 
 	/**
@@ -845,7 +872,8 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 				$fields->insertAfter(new DropdownField('SendEmailToFieldID', _t('UserDefinedForm.ORSELECTAFIELDTOUSEASTO', '.. or Select a Field to use as the To Address'), $multiOptionFields, '', null, ""), 'EmailAddress');
 			}
 		}
-
+		$this->extend('updateCMSFields', $fields);
+		
 		return $fields;
 	}
 	
@@ -856,6 +884,7 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 	function canDelete() {
 		return $this->Form()->canDelete();
 	}
+
 }
 
 /**
