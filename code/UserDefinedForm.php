@@ -696,6 +696,7 @@ JS
 						// create the file from post data
 						$upload = new Upload();
 						$file = new File();
+						$file->ShowInSearch = 0;
 						
 						$upload->loadIntoFile($_FILES[$field->Name], $file);
 
@@ -726,7 +727,7 @@ JS
 			if($attachments){
 				foreach($attachments as $file){
 					if($file->ID != 0) {
-						$email->attachFile($file->Filename,$file->Filename, $file->getFileType());
+						$email->attachFile($file->Filename,$file->Filename, HTTP::getMimeType($file->Filename));
 					}
 				}
 			}
