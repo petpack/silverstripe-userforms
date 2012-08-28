@@ -70,7 +70,7 @@ class UserDefinedFormControllerTest extends FunctionalTest {
 		$controller = new UserDefinedFormControllerTest_Controller($form);
 		
 		// test form 
-		$this->assertEquals($controller->Form()->Name(), 'Form', 'The form is referenced as Form');
+		$this->assertEquals($controller->Form()->getName(), 'Form', 'The form is referenced as Form');
 		$this->assertEquals($controller->Form()->Fields()->Count(), 1); // disabled SecurityID token fields
 		$this->assertEquals($controller->Form()->Actions()->Count(), 1);
 		$this->assertEquals(count($controller->Form()->getValidator()->getRequired()), 0);
@@ -78,7 +78,7 @@ class UserDefinedFormControllerTest extends FunctionalTest {
 		$requiredForm = $this->objFromFixture('UserDefinedForm', 'validation-form');
 		$controller = new UserDefinedFormControllerTest_Controller($requiredForm);
 
-		$this->assertEquals($controller->Form()->Fields()->Count(), 1);  // disabled SecurityID token fields
+		$this->assertEquals($controller->Form()->Fields()->Count(), 1); // disabled SecurityID token fields
 		$this->assertEquals($controller->Form()->Actions()->Count(), 1);
 		$this->assertEquals(count($controller->Form()->getValidator()->getRequired()), 1);
 	}
@@ -129,7 +129,7 @@ class UserDefinedFormControllerTest extends FunctionalTest {
 		$actions = $controller->getFormActions();
 		
 		// by default will have 1 submit button which links to process
-		$expected = new FieldSet(new FormAction('process', 'Submit'));
+		$expected = new FieldList(new FormAction('process', 'Submit'));
 		
 		$this->assertEquals($actions, $expected);
 		
@@ -139,7 +139,7 @@ class UserDefinedFormControllerTest extends FunctionalTest {
 		
 		$actions = $controller->getFormActions();
 
-		$expected = new FieldSet(new FormAction('process', 'Custom Button'));
+		$expected = new FieldList(new FormAction('process', 'Custom Button'));
 		$expected->push(new ResetFormAction("clearForm"));
 		
 		$this->assertEquals($actions, $expected);
@@ -148,7 +148,8 @@ class UserDefinedFormControllerTest extends FunctionalTest {
 	function testArrayToJson() {
 		$array = array('1' => 'one', '2' => 'two');
 		$string = "{\n1:\"one\", 2:\"two\"\n}\n";
-		$this->assertEquals(UserDefinedFormControllerTest_Controller::array2json($array), $string);
+		$form = new UserDefinedFormControllerTest_Controller();
+		$this->assertEquals($form->array2json($array), $string);
 	}
 	
 	
