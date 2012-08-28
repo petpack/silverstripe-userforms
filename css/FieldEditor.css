@@ -10,7 +10,6 @@
 	border: 1px solid #ddd;
 	background: #f4f4f4;
 	overflow: hidden;
-	padding: 4px 0;
 	width: 100%;
 }
 	.MenuHolder h2 {
@@ -21,13 +20,13 @@
 	.MenuHolder select {
 		float: left;
 		width: 240px;
-		margin: 7px 0 0 8px;
+		margin: 18px 0 0 8px;
 		font-size: 11px;
 	}
 	
 	.MenuHolder .action {
 		float: left;
-		margin: 7px 0 0 4px;
+		margin: 14px 0 0 4px;
 		font-size: 11px;
 	}
 	
@@ -36,6 +35,16 @@
 .FormOptions {
 	padding: 10px 0 0 0;
 }
+#ShowClearButton, #DisableSaveSubmissions{
+	padding-left:0;
+}
+#ShowClearButton label, #DisableSaveSubmissions label{
+	float:left;
+	font-weight:bold;
+	margin-right:43px;
+}
+
+
 
 /* Field Listing
 ---------------------------------------- */	
@@ -92,7 +101,7 @@
 			display: block;
 			overflow:hidden;
 			margin: 3px 0px 3px 38px;
-			background-color: #eee;
+			background-color: #F4F4F4;
 			padding: 3px;
 			clear: both;			
 		}
@@ -127,6 +136,14 @@
 					height: 20px;
 					float: left;
 					display: block;
+				}
+				#Fields_fields .EditableFormField .extraOptions select {
+					width: 221px;
+				}
+				#Fields_fields .EditableFormField .extraOptions .chzn-drop input {
+					font-size: 12px;
+					padding: 4px 20px 4px 5px;
+					float: none;
 				}
 				#Fields_fields .EditableFormField a.addableOption,
 				#Fields_fields .EditableFormField a.addCondition {
