@@ -13,12 +13,19 @@ class EditableLiteralField extends EditableFormField {
 	
 	static $plural_name = 'HTML Blocks';
 	
-	function getFieldConfiguration() {
-		return new FieldSet(
-			new TextareaField(
-				$this->getSettingName('Content'),
-				"HTML", 4, 20, $this->getSetting('Content')
-			),
+	public function getFieldConfiguration() {
+		$customSettings = unserialize($this->CustomSettings);	
+		$content = (isset($customSettings['Content'])) ? $customSettings['Content'] : '';
+		$textAreaField = new TextareaField(
+			$this->getSettingName('Content'),
+			"HTML",
+			$content
+		);
+		$textAreaField->setRows(4);
+		$textAreaField->setColumns(20);
+				
+		return new FieldList(
+			$textAreaField,
 			new CheckboxField(
 				$this->getSettingName('HideFromReports'),
 				_t('EditableLiteralField.HIDEFROMREPORT', 'Hide from reports?'), 
@@ -27,7 +34,7 @@ class EditableLiteralField extends EditableFormField {
 		);
 	}
 
-	function getFormField() {
+	public function getFormField() {
 		return new LiteralField("LiteralField[$this->ID]", 
 			"<div id='$this->Name' class='field text'>
 				<label class='left'>$this->Title</label>
@@ -36,7 +43,7 @@ class EditableLiteralField extends EditableFormField {
 		);
 	}
 	
-	function showInReports() {
+	public function showInReports() {
 		return (!$this->getSetting('HideFromReports'));
 	}
 }

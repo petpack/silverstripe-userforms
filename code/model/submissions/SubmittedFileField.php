@@ -18,15 +18,25 @@ class SubmittedFileField extends SubmittedFormField {
 	 * 
 	 * @return string
 	 */
-	function getFormattedValue() {
+	public function getFormattedValue() {
+		$name = $this->getName();
 		$link = $this->getLink();
 		$title = _t('SubmittedFileField.DOWNLOADFILE', 'Download File');
 		
 		if($link) {
-			return sprintf('<a href="%s">%s</a>', $link, $title);
+			return sprintf('%s - <a href="%s" target="_blank">%s</a>', $name, $link, $title);
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * Return the value for this field in the CSV export
+	 *
+	 * @return String
+	 */
+	public function getExportValue() {
+		return ($link = $this->getLink()) ? $link : "";
 	}
 
 	/**
@@ -34,11 +44,22 @@ class SubmittedFileField extends SubmittedFormField {
 	 * 
 	 * @return string
 	 */
-	function getLink() {
+	public function getLink() {
 		if($file = $this->UploadedFile()) {
-			if(trim($file->getFilename(), '/') != trim(ASSETS_DIR,'/'))  {
+			if(trim($file->getFilename(), '/') != trim(ASSETS_DIR,'/')) {
 				return $this->UploadedFile()->URL;
 			}
 		}
-	}	
+	}
+	
+	/**
+	 * Return the name of the file, if present
+	 *
+	 * @return string
+	 */
+	public function getName() {
+		if($this->UploadedFile()) {
+			return $this->UploadedFile()->Name;
+		}
+	}
 }
