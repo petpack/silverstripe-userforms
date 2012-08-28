@@ -10,6 +10,13 @@ class EditableFormField extends DataObject {
 	
 	static $default_sort = "Sort";
 	
+	/**
+	 * A list of CSS classes that can be added
+	 *
+	 * @var array
+	 */
+	public static $allowed_css = array();
+	
 	static $db = array(
 		"Name" => "Varchar",
 		"Title" => "Varchar(255)",
@@ -143,7 +150,20 @@ class EditableFormField extends DataObject {
 		
 		$this->setSettings($settings);
 	}
-	
+
+	/**
+	 * Set the allowed css classes for the extraClass custom setting
+	 * 
+	 * @param array The permissible CSS classes to add
+	 */
+	public function setAllowedCss(array $allowed) {
+		if (is_array($allowed_css)){
+			foreach ($allowed_css as $k => $v){
+				self::$allowed_css[$k] = (!is_null($v)) ? $v : $k;
+			}
+		}
+	}
+
 	/**
 	 * Return just one custom setting or empty string if it does
 	 * not exist
@@ -191,8 +211,7 @@ class EditableFormField extends DataObject {
 	}
 	
 	/**
-	 * Return the Custom Validation fields for this
-	 * field for the CMS
+	 * Return the custom validation fields for this field for the CMS
 	 *
 	 * @return array
 	 */
@@ -242,8 +261,9 @@ class EditableFormField extends DataObject {
 	 * @return TextField
 	 */
 	function TitleField() {
-		//do not XML escape the title field here, because that would result in a recursive escaping of the escaped text on every save
-		$field = new TextField('Title', _t('EditableFormField.ENTERQUESTION', 'Enter Question'), $this->getField('Title'));
+		$label = _t('EditableFormField.ENTERQUESTION', 'Enter Question');
+		
+		$field = new TextField('Title', $label, $this->getField('Title'));
 		$field->setName($this->getFieldName('Title'));
 
 		if(!$this->canEdit()) {
@@ -276,7 +296,7 @@ class EditableFormField extends DataObject {
 	 * @param String name of the setting
 	 * @return String
 	 */
-	public function getSettingFieldName($field) {
+	public function getSettingName($field) {
 		$name = $this->getFieldName('CustomSettings');
 		
 		return $name . '[' . $field .']';
@@ -342,12 +362,38 @@ class EditableFormField extends DataObject {
 	 * @return FieldSet
 	 */
 	public function getFieldConfiguration() {
+		$extraClass = ($this->getSetting('ExtraClass')) ? $this->getSetting('ExtraClass') : '';
+
+		if (is_array(self::$allowed_css) && !empty(self::$allowed_css)) {
+			foreach(self::$allowed_css as $k => $v) {
+				if (!is_array($v)) $cssList[$k]=$v;
+				elseif ($k == $this->ClassName()) $cssList = array_merge($cssList, $v);
+			}
+			
+			$ec = new DropdownField(
+				$this->getSettingName('ExtraClass'), 
+				_t('EditableFormField.EXTRACLASSA', 'Extra Styling/Layout'), 
+				$cssList, $extraClass
+			);
+			
+		}
+		else {
+			$ec = new TextField(
+				$this->getSettingName('ExtraClass'), 
+				_t('EditableFormField.EXTRACLASSB', 'Extra css Class - separate multiples with a space'), 
+				$extraClass
+			);
+		}
+		
+		$right = new TextField(
+			$this->getSettingName('RightTitle'), 
+			_t('EditableFormField.RIGHTTITLE', 'Right Title'), 
+			$this->getSetting('RightTitle')
+		);
+			
 		return new FieldSet(
-			new TextField(
-				$this->getSettingFieldName('RightTitle'), 
-				_t('EditableFormField.RIGHTTITLE', 'Right Title'), 
-				$this->getSetting('RightTitle')
-			)
+			$ec,
+			$right
 		);
 	}
 	
