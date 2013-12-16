@@ -1,23 +1,23 @@
 <?php
 
 /**
- * User Defined Form Page type that lets users build a form in the CMS 
- * using the FieldEditor Field. 
- * 
+ * User Defined Form Page type that lets users build a form in the CMS
+ * using the FieldEditor Field.
+ *
  * @todo Allow UserDefinedForm instances on Page subclasses (eg via decorator)
  *
  * @package userforms
  */
 
 class UserDefinedForm extends Page {
-	
+
 	/**
 	 * @var String Required Identifier
 	 */
 	static $required_identifier = null;
-	
+
 	/**
-	 * @var Array Fields on the user defined form page. 
+	 * @var Array Fields on the user defined form page.
 	 */
 	static $db = array(
 		"SubmitButtonText" => "Varchar",
@@ -25,10 +25,10 @@ class UserDefinedForm extends Page {
 		"ShowClearButton" => "Boolean",
 		'DisableSaveSubmissions' => 'Boolean'
 	);
-	
+
 	/**
 	 * @var Array Default values of variables when this page is created
-	 */ 
+	 */
 	static $defaults = array(
 		'Content' => '$UserDefinedForm',
 		'DisableSaveSubmissions' => 0,
@@ -42,15 +42,15 @@ class UserDefinedForm extends Page {
 	/**
 	 * @var Array
 	 */
-	static $has_many = array( 
+	static $has_many = array(
 		"Fields" => "EditableFormField",
 		"Submissions" => "SubmittedForm",
 		"EmailRecipients" => "UserDefinedForm_EmailRecipient"
 	);
-	
+
 	/**
 	 * Setup the CMS Fields for the User Defined Form
-	 * 
+	 *
 	 * @return FieldSet
 	 */
 	public function getCMSFields() {
@@ -66,7 +66,7 @@ class UserDefinedForm extends Page {
 
 		// field editor
 		$fields->addFieldToTab("Root.Content.Form", new FieldEditor("Fields", 'Fields', "", $this ));
-		
+
 		// view the submissions
 		$fields->addFieldToTab("Root.Content.Submissions", new CheckboxField('DisableSaveSubmissions',_t('UserDefinedForm.SAVESUBMISSIONS',"Disable Saving Submissions to Server")));
 		$fields->addFieldToTab("Root.Content.Submissions", new SubmittedFormReportField( "Reports", _t('UserDefinedForm.RECEIVED', 'Received Submissions'), "", $this ) );
@@ -85,29 +85,29 @@ class UserDefinedForm extends Page {
 			"\"FormID\" = '$this->ID'"
 		);
 		$emailRecipients->setAddTitle(_t('UserDefinedForm.AEMAILRECIPIENT', 'A Email Recipient'));
-		
+
 		$fields->addFieldToTab("Root.Content.EmailRecipients", $emailRecipients);
-	
+
 		// text to show on complete
 		$onCompleteFieldSet = new FieldSet(
 			new HtmlEditorField( "OnCompleteMessage", _t('UserDefinedForm.ONCOMPLETELABEL', 'Show on completion'),3,"",_t('UserDefinedForm.ONCOMPLETEMESSAGE', $this->OnCompleteMessage), $this )
 		);
-		
+
 		$fields->addFieldsToTab("Root.Content.OnComplete", $onCompleteFieldSet);
 		$fields->addFieldsToTab("Root.Content.Options", $this->getFormOptions());
-		
+
 		self::enableCMSFieldsExtensions();
 		$this->extend('updateCMSFields', $fields);
-		
+
 		return $fields;
 	}
-	
-	
+
+
 	/**
 	 * Publishing Versioning support.
 	 *
 	 * When publishing copy the editable form fields to the live database
-	 * Not going to version emails and submissions as they are likely to 
+	 * Not going to version emails and submissions as they are likely to
 	 * persist over multiple versions
 	 *
 	 * @return void
@@ -131,11 +131,11 @@ class UserDefinedForm extends Page {
 
 		parent::doPublish();
 	}
-	
+
 	/**
 	 * Unpublishing Versioning support
-	 * 
-	 * When unpublishing the page it has to remove all the fields from 
+	 *
+	 * When unpublishing the page it has to remove all the fields from
 	 * the live database table
 	 *
 	 * @return void
@@ -146,10 +146,10 @@ class UserDefinedForm extends Page {
 				$field->doDeleteFromStage('Live');
 			}
 		}
-		
+
 		parent::doUnpublish();
 	}
-	
+
 	/**
 	 * Roll back a form to a previous version.
 	 *
@@ -157,15 +157,15 @@ class UserDefinedForm extends Page {
 	 */
 	public function doRollbackTo($version) {
 		parent::doRollbackTo($version);
-		
+
 		/*
-			Not implemented yet 
-	
+			Not implemented yet
+
 		// get the older version
 		$reverted = Versioned::get_version($this->ClassName, $this->ID, $version);
-		
+
 		if($reverted) {
-			
+
 			// using the lastedited date of the reverted object we can work out which
 			// form fields to revert back to
 			if($this->Fields()) {
@@ -175,13 +175,13 @@ class UserDefinedForm extends Page {
 						SELECT LastEdited
 						FROM \"SiteTree_versions\"
 						WHERE \"RecordID\" = '$this->ID' AND \"Version\" = $version
-					")->value(); 
-					
+					")->value();
+
 
 					// find a the latest version which has been edited
 					$versionToGet = DB::query("
 						SELECT *
-						FROM \"EditableFormField_versions\" 
+						FROM \"EditableFormField_versions\"
 						WHERE \"RecordID\" = '$field->ID' AND \"LastEdited\" <= '$editedDate'
 						ORDER BY Version DESC
 						LIMIT 1
@@ -196,18 +196,18 @@ class UserDefinedForm extends Page {
 					else {
 						Debug::show('deleting field'. $field->Name);
 						$this->Fields()->remove($field);
-						
+
 						$field->delete();
 						$field->destroy();
 					}
 				}
 			}
-			
+
 			// @todo Emails
 		}
 		*/
 	}
-	
+
 	/**
 	 * Revert the draft site to the current live site
 	 *
@@ -220,10 +220,10 @@ class UserDefinedForm extends Page {
 				$field->writeWithoutVersion();
 			}
 		}
-		
+
 		parent::doRevertToLive();
 	}
-	
+
 	/**
 	 * Duplicate this UserDefinedForm page, and its form fields.
 	 * Submissions, on the other hand, won't be duplicated.
@@ -232,7 +232,7 @@ class UserDefinedForm extends Page {
 	 */
 	public function duplicate() {
 		$page = parent::duplicate();
-		
+
 		// the form fields
 		if($this->Fields()) {
 			foreach($this->Fields() as $field) {
@@ -241,7 +241,7 @@ class UserDefinedForm extends Page {
 				$newField->write();
 			}
 		}
-		
+
 		// the emails
 		if($this->EmailRecipients()) {
 			foreach($this->EmailRecipients() as $email) {
@@ -250,35 +250,35 @@ class UserDefinedForm extends Page {
 				$newEmail->write();
 			}
 		}
-		
+
 		return $page;
 	}
-	
+
 	/**
-	 * Custom options for the form. You can extend the built in options by 
+	 * Custom options for the form. You can extend the built in options by
 	 * using {@link updateFormOptions()}
 	 *
 	 * @return FieldSet
 	 */
   	public function getFormOptions() {
 		$submit = ($this->SubmitButtonText) ? $this->SubmitButtonText : _t('UserDefinedForm.SUBMITBUTTON', 'Submit');
-		
+
 		$options = new FieldSet(
 			new TextField("SubmitButtonText", _t('UserDefinedForm.TEXTONSUBMIT', 'Text on submit button:'), $submit),
 			new CheckboxField("ShowClearButton", _t('UserDefinedForm.SHOWCLEARFORM', 'Show Clear Form Button'), $this->ShowClearButton)
 		);
-		
+
 		$this->extend('updateFormOptions', $options);
-		
+
 		return $options;
 	}
-	
+
 	/**
 	 * Return if this form has been modified on the stage site and not published.
 	 * this is used on the workflow module and for a couple highlighting things
 	 *
 	 * @todo make this a bit smarter - the issue with userforms is that it uses several
-	 * 		relationships to form fields which has a undefined amount of options so 
+	 * 		relationships to form fields which has a undefined amount of options so
 	 * 		for now just say its always modified
 	 */
 	public function getIsModifiedOnStage() {
@@ -294,22 +294,22 @@ class UserDefinedForm extends Page {
  */
 
 class UserDefinedForm_Controller extends Page_Controller {
-	
+
 	/**
-	 * Load all the custom jquery needed to run the custom 
-	 * validation 
+	 * Load all the custom jquery needed to run the custom
+	 * validation
 	 */
 	public function init() {
 		parent::init();
-		
+
 		// block prototype validation
 		Validator::set_javascript_validation_handler('none');
-		
+
 		// load the jquery
 		Requirements::javascript(SAPPHIRE_DIR .'/thirdparty/jquery/jquery.js');
 		Requirements::javascript('userforms/thirdparty/jquery-validate/jquery.validate.min.js');
 	}
-	
+
 	/**
 	 * Using $UserDefinedForm in the Content area of the page shows
 	 * where the form should be rendered into. If it does not exist
@@ -320,12 +320,12 @@ class UserDefinedForm_Controller extends Page_Controller {
 	public function index() {
 		if($this->Content && $form = $this->Form()) {
 			$hasLocation = stristr($this->Content, '$UserDefinedForm');
-			
+
 			if($hasLocation) {
 				$replace = ($form = $this->Form()) ? $form->forTemplate() : "";
-				
+
 				$content = str_ireplace('$UserDefinedForm', $replace, $this->Content);
-				
+
 				return array(
 					'Content' => DBField::create('HTMLText', $content),
 					'Form' => ""
@@ -348,26 +348,26 @@ class UserDefinedForm_Controller extends Page_Controller {
 	function Form() {
 		$fields = $this->getFormFields();
 		if(!$fields) return false;
-		
+
 		$actions = $this->getFormActions();
-		
+
 		// get the required fields including the validation
 		$required = $this->getRequiredFields();
 
-		// generate the conditional logic 
+		// generate the conditional logic
 		$this->generateConditionalJavascript();
 
 		$form = new Form($this, "Form", $fields, $actions, $required);
-		
+
 		$data = Session::get("FormInfo.{$form->FormName()}.data");
-		
+
 		if(is_array($data)) $form->loadDataFrom($data);
-		
+
 		$this->extend('updateForm', $form);
-		
+
 		return $form;
 	}
-	
+
 	/**
 	 * Get the form fields for the form on this page. Can modify this FieldSet
 	 * by using {@link updateFormFields()} on an {@link Extension} subclass which
@@ -383,7 +383,7 @@ class UserDefinedForm_Controller extends Page_Controller {
 				// get the raw form field from the editable version
 				$field = $editableField->getFormField();
 				if(!$field) break;
-				
+
 				// set the error / formatting messages
 				$field->setCustomValidationMessage($editableField->getErrorMessage());
 
@@ -391,13 +391,13 @@ class UserDefinedForm_Controller extends Page_Controller {
 				if($right = $editableField->getSetting('RightTitle')) {
 					$field->setRightTitle($right);
 				}
-				
+
 				// if this field is required add some
 				if($editableField->Required) {
 					$field->addExtraClass('requiredField');
-					
+
 					if($identifier = UserDefinedForm::$required_identifier) {
-						
+
 						$title = $field->Title() ." <span class='required-identifier'>". $identifier . "</span>";
 						$field->setTitle($title);
 					}
@@ -408,13 +408,13 @@ class UserDefinedForm_Controller extends Page_Controller {
 						$editableField->getSetting('ExtraClass')
 					));
 				}
-				
+
 				// set the values passed by the url to the field
 				$request = $this->getRequest();
 				if($var = $request->getVar($field->name)) {
 					$field->value = Convert::raw2att($var);
 				}
-				
+
 				$fields->push($field);
 			}
 		}
@@ -422,9 +422,9 @@ class UserDefinedForm_Controller extends Page_Controller {
 
 		return $fields;
 	}
-	
+
 	/**
-	 * Generate the form actions for the UserDefinedForm. You 
+	 * Generate the form actions for the UserDefinedForm. You
 	 * can manipulate these by using {@link updateFormActions()} on
 	 * a decorator.
 	 *
@@ -434,7 +434,7 @@ class UserDefinedForm_Controller extends Page_Controller {
 	 */
 	function getFormActions() {
 		$submitText = ($this->SubmitButtonText) ? $this->SubmitButtonText : _t('UserDefinedForm.SUBMITBUTTON', 'Submit');
-		
+
 		$actions = new FieldSet(
 			new FormAction("process", $submitText)
 		);
@@ -442,12 +442,12 @@ class UserDefinedForm_Controller extends Page_Controller {
 		if($this->ShowClearButton) {
 			$actions->push(new ResetFormAction("clearForm"));
 		}
-		
+
 		$this->extend('updateFormActions', $actions);
-		
+
 		return $actions;
 	}
-	
+
 	/**
 	 * Get the required form fields for this form. Includes building the jQuery
 	 * validate structure
@@ -456,33 +456,33 @@ class UserDefinedForm_Controller extends Page_Controller {
 	 */
 	function getRequiredFields() {
 		$required = new RequiredFields();
-		
+
 		$rules = array();
 		$validation = array();
 		$messages = array();
-		
+
 		if($this->Fields()) {
 			foreach($this->Fields() as $field) {
 				$messages[$field->Name] = $field->getErrorMessage()->HTML();
-	
+
 				if($field->Required && $field->CustomRules()->Count() == 0) {
 					$rules[$field->Name] = array_merge(array('required' => true), $field->getValidation());
 					$required->addRequiredField($field->Name);
 				}
 			}
 		}
-		
+
 		// Set the Form Name
 		$rules = $this->array2json($rules);
 		$messages = $this->array2json($messages);
-		
+
 		// set the custom script for this form
 		Requirements::customScript(<<<JS
 			(function($) {
 				$(document).ready(function() {
 					$("#Form_Form").validate({
 						ignore: [':hidden'],
-						errorClass: "required",	
+						errorClass: "required",
 						errorPlacement: function(error, element) {
 							if(element.is(":radio")) {
 								error.insertAfter(element.closest("ul"));
@@ -493,36 +493,36 @@ class UserDefinedForm_Controller extends Page_Controller {
 						messages:
 							$messages
 						,
-						rules: 
+						rules:
 						 	$rules
 					});
 				});
 			})(jQuery);
 JS
 , 'UserFormsValidation');
-		
+
 		$this->extend('updateRequiredFields', $required);
-		
+
 		return $required;
 	}
-	
+
 	/**
 	 * Generate the javascript for the conditional field show / hiding logic.
-	 * Allows complex rules to be created 
+	 * Allows complex rules to be created
 	 * @return void
 	 */
 	function generateConditionalJavascript() {
 		$default = "";
 		$rules = "";
-		
+
 		if($this->Fields()) {
 			foreach($this->Fields() as $field) {
 				$fieldId = $field->Name;
-				
-				if($field->ClassName == 'EditableFormHeading') { 
+
+				if($field->ClassName == 'EditableFormHeading') {
 					$fieldId = 'Form_Form_'.$field->Name;
 				}
-				
+
 				// Is this Field Show by Default
 				if(!$field->getShowOnLoad()) {
 					$default .= "$(\"#" . $fieldId . "\").hide();\n";
@@ -535,41 +535,41 @@ JS
 							// get the field which is effected
 							$formName = Convert::raw2sql($dependency['ConditionField']);
 							$formFieldWatch = DataObject::get_one("EditableFormField", "\"Name\" = '$formName'");
-							
+
 							if(!$formFieldWatch) break;
-							
+
 							// watch out for multiselect options - radios and check boxes
 							if(is_a($formFieldWatch, 'EditableDropdown')) {
-								$fieldToWatch = "$(\"select[name='".$dependency['ConditionField']."']\")";	
+								$fieldToWatch = "$(\"select[name='".$dependency['ConditionField']."']\")";
 							}
-							
+
 							// watch out for checkboxs as the inputs don't have values but are 'checked
 							else if(is_a($formFieldWatch, 'EditableCheckboxGroupField')) {
 								$fieldToWatch = "$(\"input[name='".$dependency['ConditionField']."[".$dependency['Value']."]']\")";
 							}
 							else {
-								$fieldToWatch = "$(\"input[name='".$dependency['ConditionField']."']\")";		
+								$fieldToWatch = "$(\"input[name='".$dependency['ConditionField']."']\")";
 							}
-							
+
 							// show or hide?
 							$view = (isset($dependency['Display']) && $dependency['Display'] == "Hide") ? "hide" : "show";
 							$opposite = ($view == "show") ? "hide" : "show";
-							
+
 							// what action do we need to keep track of. Something nicer here maybe?
 							// @todo encapulsation
 							$action = "change";
-							
+
 							if($formFieldWatch->ClassName == "EditableTextField" || $formFieldWatch->ClassName == "EditableDateField") {
 								$action = "keyup";
 							}
-							
+
 							// is this field a special option field
 							$checkboxField = false;
 							if(in_array($formFieldWatch->ClassName, array('EditableCheckboxGroupField', 'EditableCheckbox'))) {
 								$action = "click";
 								$checkboxField = true;
 							}
-							
+
 							// and what should we evaluate
 							switch($dependency['ConditionOption']) {
 								case 'IsNotBlank':
@@ -578,7 +578,7 @@ JS
 									break;
 								case 'IsBlank':
 									$expression = ($checkboxField) ? '!($(this).attr("checked"))' : '$(this).val() == ""';
-									
+
 									break;
 								case 'HasValue':
 									$expression = ($checkboxField) ? '$(this).attr("checked")' : '$(this).val() == "'. $dependency['Value'] .'"';
@@ -586,11 +586,11 @@ JS
 									break;
 								case 'ValueLessThan':
 									$expression = '$(this).val() < parseFloat("'. $dependency['Value'] .'")';
-									
+
 									break;
 								case 'ValueLessThanEqual':
 									$expression = '$(this).val() <= parseFloat("'. $dependency['Value'] .'")';
-									
+
 									break;
 								case 'ValueGreaterThan':
 									$expression = '$(this).val() > parseFloat("'. $dependency['Value'] .'")';
@@ -599,10 +599,10 @@ JS
 								case 'ValueGreaterThanEqual':
 									$expression = '$(this).val() >= parseFloat("'. $dependency['Value'] .'")';
 
-									break;	
+									break;
 								default:
 									$expression = ($checkboxField) ? '!($(this).attr("checked"))' : '$(this).val() != "'. $dependency['Value'] .'"';
-								
+
 									break;
 							}
 							// put it all together
@@ -619,12 +619,12 @@ JS
 				}
 			}
 		}
-		
+
 		Requirements::customScript(<<<JS
 			(function($) {
 				$(document).ready(function() {
 					$rules
-					
+
 					$default
 				})
 			})(jQuery);
@@ -632,13 +632,13 @@ JS
 , 'UserFormsConditional');
 
 	}
-	
+
 	/**
 	 * Convert a PHP array to a JSON string. We cannot use {@link Convert::array2json}
 	 * as it escapes our values with "" which appears to break the validate plugin
 	 *
 	 * @param Array array to convert
-	 * @return JSON 
+	 * @return JSON
 	 */
 	function array2json($array) {
 		foreach($array as $key => $value)
@@ -650,22 +650,27 @@ JS
 			}
 		return (isset($result)) ? "{\n".implode( ', ', $result ) ."\n}\n": '{}';
 	}
-	
+
 	/**
 	 * Process the form that is submitted through the site
-	 * 
+	 *
 	 * @param Array Data
-	 * @param Form Form 
+	 * @param Form Form
 	 * @return Redirection
 	 */
 	function process($data, $form) {
 		$submittedForm = $this->processUserDefinedForm($data, $form);
-		Session::clear("FormInfo.{$form->FormName()}.errors");
-		Session::clear("FormInfo.{$form->FormName()}.data");
-		
+
+		if ($submittedForm) {
+			Session::clear("FormInfo.{$form->FormName()}.errors");
+			Session::clear("FormInfo.{$form->FormName()}.data");
+		}
+
 		$referrer = (isset($data['Referrer'])) ? '?referrer=' . urlencode($data['Referrer']) : "";
-		
-		return Director::redirect($this->Link() . 'finished' . $referrer);
+
+		if (!$this->redirectedTo())
+			return Director::redirect($this->Link() . 'finished' . $referrer);
+		else return $this;	//error - redirected back
 	}
 
 	/**
@@ -675,12 +680,12 @@ JS
 	 * @return SubmittedForm
 	 */
 	function processUserDefinedForm($data, $form) {
-		Session::set("FormInfo.{$form->FormName()}.data",$data);	
+		Session::set("FormInfo.{$form->FormName()}.data",$data);
 		Session::clear("FormInfo.{$form->FormName()}.errors");
-		
+
 		foreach($this->Fields() as $field) {
 			$messages[$field->Name] = $field->getErrorMessage()->HTML();
-				
+
 			if($field->Required && $field->CustomRules()->Count() == 0) {
 				if(	!isset($data[$field->Name]) ||
 					!$data[$field->Name] ||
@@ -690,33 +695,33 @@ JS
 				}
 			}
 		}
-		
+
 		if(Session::get("FormInfo.{$form->FormName()}.errors")){
-			Director::redirectBack();
-			return;
+			$this->redirectBack();
+			return false;
 		}
-		
+
 		$submittedForm = Object::create('SubmittedForm');
 		$submittedForm->SubmittedByID = ($id = Member::currentUserID()) ? $id : 0;
 		$submittedForm->ParentID = $this->ID;
 
 		// if saving is not disabled save now to generate the ID
 		if(!$this->DisableSaveSubmissions) $submittedForm->write();
-		
+
 		$values = array();
         $attachments = array();
 
 		$submittedFields = new DataObjectSet();
-		
+
 		foreach($this->Fields() as $field) {
-			
+
 			if(!$field->showInReports()) continue;
-			
+
 			$submittedField = $field->getSubmittedFormField();
 			$submittedField->ParentID = $submittedForm->ID;
 			$submittedField->Name = $field->Name;
 			$submittedField->Title = $field->getField('Title');
-			
+
 			// save the value from the data
 			if($field->hasMethod('getValueFromData')) {
 				$submittedField->Value = $field->getValueFromData($data);
@@ -728,38 +733,38 @@ JS
 			if(!empty($data[$field->Name])){
 				if(in_array("EditableFileField", $field->getClassAncestry())) {
 					if(isset($_FILES[$field->Name])) {
-						
+
 						// create the file from post data
 						$upload = new Upload();
 						$file = new File();
 						$file->ShowInSearch = 0;
-						
+
 						$upload->loadIntoFile($_FILES[$field->Name], $file);
 
 						// write file to form field
 						$submittedField->UploadedFileID = $file->ID;
-						
+
 						// attach a file only if lower than 1MB
 						if($file->getAbsoluteSize() < 1024*1024*1){
 							$attachments[] = $file;
 						}
-					}									
+					}
 				}
 			}
-			
+
 			if(!$this->DisableSaveSubmissions) $submittedField->write();
-	
+
 			$submittedFields->push($submittedField);
 		}
-		
+
 		$emailData = $this->getEmailData($submittedFields);
 
 		// email users on submit.
 		if($this->EmailRecipients()) {
-			
+
 			$email = $this->getSubmittedFormEmail($submittedFields);
 			$email->populateTemplate($emailData);
-			
+
 			if($attachments){
 				foreach($attachments as $file){
 					if($file->ID != 0) {
@@ -775,20 +780,20 @@ JS
 				$email->setBody($recipient->EmailBody);
 				$email->setSubject($recipient->EmailSubject);
 				$email->setTo($recipient->EmailAddress);
-				
+
 				// check to see if they are a dynamic sender. eg based on a email field a user selected
 				if($recipient->SendEmailFromField()) {
 					$submittedFormField = $submittedFields->find('Name', $recipient->SendEmailFromField()->Name);
 					if($submittedFormField) {
-						$email->setFrom($submittedFormField->Value);	
+						$email->setFrom($submittedFormField->Value);
 					}
 				}
 				// check to see if they are a dynamic reciever eg based on a dropdown field a user selected
 				if($recipient->SendEmailToField()) {
 					$submittedFormField = $submittedFields->find('Name', $recipient->SendEmailToField()->Name);
-					
+
 					if($submittedFormField) {
-						$email->setTo($submittedFormField->Value);	
+						$email->setTo($submittedFormField->Value);
 					}
 				}
 				$recipient->extend('onBeforeSend', $email);
@@ -803,7 +808,7 @@ JS
 					$email->sendPlain();
 				}
 				else {
-					$email->send();	
+					$email->send();
 				}
 			}
 		}
@@ -836,7 +841,7 @@ JS
 	 */
 	function finished() {
 		$referrer = isset($_GET['referrer']) ? urldecode($_GET['referrer']) : null;
-		
+
 		return $this->customise(array(
 			'Content' => $this->customise(
 				array(
@@ -848,13 +853,13 @@ JS
 }
 
 /**
- * A Form can have multiply members / emails to email the submission 
+ * A Form can have multiply members / emails to email the submission
  * to and custom subjects
- * 
+ *
  * @package userforms
  */
 class UserDefinedForm_EmailRecipient extends DataObject {
-	
+
 	static $db = array(
 		'EmailAddress' => 'Varchar(200)',
 		'EmailSubject' => 'Varchar(200)',
@@ -863,19 +868,19 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 		'SendPlain' => 'Boolean',
 		'HideFormData' => 'Boolean'
 	);
-	
+
 	static $has_one = array(
 		'Form' => 'UserDefinedForm',
 		'SendEmailFromField' => 'EditableFormField',
 		'SendEmailToField' => 'EditableFormField'
 	);
-	
+
 	/**
-	 * Return the fields to edit this email. 
+	 * Return the fields to edit this email.
 	 * @return FieldSet
 	 */
 	public function getCMSFields_forPopup() {
-		
+
 		$fields = new FieldSet(
 			new TextField('EmailSubject', _t('UserDefinedForm.EMAILSUBJECT', 'Email Subject')),
 			new TextField('EmailFrom', _t('UserDefinedForm.FROMADDRESS','Send Email From')),
@@ -884,40 +889,40 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 			new CheckboxField('SendPlain', _t('UserDefinedForm.SENDPLAIN', 'Send Email as Plain Text (HTML will be stripped)')),
 			new TextareaField('EmailBody', _t('UserDefinedForm.EMAILBODY','Body'))
 		);
-		
+
 		if($this->Form()) {
 			$validEmailFields = DataObject::get("EditableEmailField", "\"ParentID\" = '" . (int)$this->FormID . "'");
 			$multiOptionFields = DataObject::get("EditableMultipleOptionField", "\"ParentID\" = '" . (int)$this->FormID . "'");
-			
+
 			// if they have email fields then we could send from it
 			if($validEmailFields) {
 				$fields->insertAfter(new DropdownField('SendEmailFromFieldID', _t('UserDefinedForm.ORSELECTAFIELDTOUSEASFROM', '.. or Select a Form Field to use as the From Address'), $validEmailFields->toDropdownMap('ID', 'Title'), '', null,""), 'EmailFrom');
 			}
-			
+
 			// if they have multiple options
 			if($multiOptionFields || $validEmailFields) {
 
 				if($multiOptionFields && $validEmailFields) {
 					$multiOptionFields->merge($validEmailFields);
-					
+
 				}
 				elseif(!$multiOptionFields) {
-					$multiOptionFields = $validEmailFields;	
+					$multiOptionFields = $validEmailFields;
 				}
-				
+
 				$multiOptionFields = $multiOptionFields->toDropdownMap('ID', 'Title');
 				$fields->insertAfter(new DropdownField('SendEmailToFieldID', _t('UserDefinedForm.ORSELECTAFIELDTOUSEASTO', '.. or Select a Field to use as the To Address'), $multiOptionFields, '', null, ""), 'EmailAddress');
 			}
 		}
 		$this->extend('updateCMSFields', $fields);
-		
+
 		return $fields;
 	}
-	
+
 	function canEdit() {
 		return $this->Form()->canEdit();
 	}
-	
+
 	function canDelete() {
 		return $this->Form()->canDelete();
 	}
@@ -925,7 +930,7 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 }
 
 /**
- * Email that gets sent to the people listed in the Email Recipients 
+ * Email that gets sent to the people listed in the Email Recipients
  * when a submission is made
  *
  * @package userforms

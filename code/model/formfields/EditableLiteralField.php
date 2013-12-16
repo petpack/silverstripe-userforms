@@ -3,16 +3,16 @@
 /**
  * Editable Literal Field. A literal field is just a blank slate where
  * you can add your own HTML / Images / Flash
- * 
+ *
  * @package userforms
  */
 
 class EditableLiteralField extends EditableFormField {
-	
+
 	static $singular_name = 'HTML Block';
-	
+
 	static $plural_name = 'HTML Blocks';
-	
+
 	function getFieldConfiguration() {
 		return new FieldSet(
 			new TextareaField(
@@ -21,22 +21,39 @@ class EditableLiteralField extends EditableFormField {
 			),
 			new CheckboxField(
 				$this->getSettingName('HideFromReports'),
-				_t('EditableLiteralField.HIDEFROMREPORT', 'Hide from reports?'), 
+				_t('EditableLiteralField.HIDEFROMREPORT', 'Hide from reports?'),
 				$this->getSetting('HideFromReports')
 			)
 		);
 	}
 
 	function getFormField() {
-		return new LiteralField("LiteralField[$this->ID]", 
+		return new LiteralField("LiteralField[$this->ID]",
 			"<div id='$this->Name' class='field text'>
 				<label class='left'>$this->Title</label>
 				<div class='middleColumn literalFieldArea'>". $this->getSetting('Content') ."</div>".
 			"</div>"
 		);
 	}
-	
+
 	function showInReports() {
 		return (!$this->getSetting('HideFromReports'));
+	}
+
+	/**
+	 * Literal Fields are not inputs and therefore should not have validation
+	 * 	(required, custom error), so do not provide the option:
+	 * @return FieldSet
+	 */
+	function getFieldValidationOptions() {
+		return new FieldSet();
+	}
+
+	/**
+	 * Literal Fields can never be required.
+	 */
+	function onBeforeWrite() {
+		$this->Required = False;
+		return parent::onBeforeWrite();
 	}
 }
