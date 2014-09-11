@@ -23,7 +23,8 @@ class UserDefinedForm extends Page {
 		"SubmitButtonText" => "Varchar",
 		"OnCompleteMessage" => "HTMLText",
 		"ShowClearButton" => "Boolean",
-		'DisableSaveSubmissions' => 'Boolean'
+		'DisableSaveSubmissions' => 'Boolean',
+		'HasHoneyPot' => 'Boolean',
 	);
 
 	/**
@@ -32,7 +33,8 @@ class UserDefinedForm extends Page {
 	static $defaults = array(
 		'Content' => '$UserDefinedForm',
 		'DisableSaveSubmissions' => 0,
-		'OnCompleteMessage' => '<p>Thanks, we\'ve received your submission.</p>'
+		'OnCompleteMessage' => '<p>Thanks, we\'ve received your submission.</p>',
+		'HasHoneyPot' => True,
 	);
 
 	static $extensions = array(
@@ -65,6 +67,10 @@ class UserDefinedForm extends Page {
 		$fields->findOrMakeTab('Root.Content.Submissions', _t('UserDefinedForm.SUBMISSIONS', 'Submissions'));
 
 		// field editor
+		$fields->addFieldToTab("Root.Content.Form",
+			new CheckboxField("HasHoneyPot","Add a Honeypot field to try to detect spammers and bots.",$this->HasHoneyPot) 
+		);
+		
 		$fields->addFieldToTab("Root.Content.Form", new FieldEditor("Fields", 'Fields', "", $this ));
 
 		// view the submissions
@@ -317,12 +323,13 @@ class UserDefinedForm_Controller extends Page_Controller {
 	 *
 	 * @return Array
 	 */
-	public function index() {
-		if($this->Content && $form = $this->Form()) {
+	public function index(SS_HTTPRequest $request = null) {
+		if($this->Content && $form = $this->Form($request)) {
 			$hasLocation = stristr($this->Content, '$UserDefinedForm');
 
 			if($hasLocation) {
-				$replace = ($form = $this->Form()) ? $form->forTemplate() : "";
+
+				$replace = $form->forTemplate();
 
 				$content = str_ireplace('$UserDefinedForm', $replace, $this->Content);
 
@@ -335,7 +342,7 @@ class UserDefinedForm_Controller extends Page_Controller {
 
 		return array(
 			'Content' => DBField::create('HTMLText', $this->Content),
-			'Form' => $this->Form()
+			'Form' => $form
 		);
 	}
 
@@ -345,7 +352,7 @@ class UserDefinedForm_Controller extends Page_Controller {
 	 *
 	 * @return Form|false
 	 */
-	function Form() {
+	function Form(SS_HTTPRequest $request = null) {
 		$fields = $this->getFormFields();
 		if(!$fields) return false;
 
@@ -356,18 +363,33 @@ class UserDefinedForm_Controller extends Page_Controller {
 
 		// generate the conditional logic
 		$this->generateConditionalJavascript();
-
+		
 		$form = new Form($this, "Form", $fields, $actions, $required);
 
-		$data = Session::get("FormInfo.{$form->FormName()}.data");
+		if ($request && $request->isPOST())
+			$data = $request->postVars();
+		else $data = null;
+		
+		if (!$data)
+			$data = Session::get("FormInfo.{$form->FormName()}.data");
 
 		if(is_array($data)) $form->loadDataFrom($data);
+		
+		if ((!$form->message) && $error = Session::get("FormInfo.{$form->FormName()}.formError")) {
+			//var_dump($error);
+			$form->sessionMessage($error['message'], $error['type']);
+			$form->setMessage($error['message'], $error['type']);
+			//die();
+		}
+		
+		if (isset($data['honeypot']))
+			$form->setMessage('Only submissions from humans are accepted', 'bad');
 
 		$this->extend('updateForm', $form);
-
+		
 		return $form;
 	}
-
+	
 	/**
 	 * Get the form fields for the form on this page. Can modify this FieldSet
 	 * by using {@link updateFormFields()} on an {@link Extension} subclass which
@@ -377,6 +399,12 @@ class UserDefinedForm_Controller extends Page_Controller {
 	 */
 	function getFormFields() {
 		$fields = new FieldSet();
+		
+		/**
+		 * indicates whether the form has an "Email" field. If it does, our honeypot
+		 * 	looks like an 'email confirmation' field, otherwise it looks like an 'email' field.
+		 */
+		$emailField = null;
 
 		if($this->Fields()) {
 			foreach($this->Fields() as $editableField) {
@@ -414,13 +442,62 @@ class UserDefinedForm_Controller extends Page_Controller {
 				if($var = $request->getVar($field->name)) {
 					$field->value = Convert::raw2att($var);
 				}
-
+				
+				
+				//only the first 'email' field counts
+				if ((!$emailField) && self::isEmailField($editableField))
+					$emailField = $field;
+				
 				$fields->push($field);
 			}
+			
+			/**
+			 * If honeypot is enabled, build it and add it to the form
+			 *  The honeypot will either be called 'email' or 'confirm email' depending on whether
+			 *  	an email field already exists.
+			 * 	This will either be the first field, or the field after the email field
+			 */
+			if ($this->HasHoneyPot) {
+				$honeypot = PetPackMemberProfilePage_Controller::HoneypotField(!!$emailField);
+				if ($emailField)
+					$fields->insertAfter($honeypot, $emailField->name);
+				else
+					$fields->insertFirst($honeypot);
+			}
+			
 		}
 		$this->extend('updateFormFields', $fields);
 
 		return $fields;
+	}
+	
+	/**
+	 * Returns the first field on the form which counts as an email field.
+	 * This might be null.
+	 */
+	function getEmailField() {
+		if($this->Fields()) {
+			foreach($this->Fields() as $editableField) {
+				if (self::isEmailField($editableField))
+					return $editableField;
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Indicates whether a field counts as an email field.
+	 * @param EditableFormField $editableField
+	 * @return boolean
+	 */
+	static public function isEmailField($editableField) {
+		//there are a few things which could be an 'email' field:
+		//	- a field named 'email'
+		//	- a field with 'email' in the title
+		//	- an email field.
+		return (strtolower($editableField->name) == 'email' ||
+			(strpos(preg_replace("|[^a-z]|", "", strtolower($editableField->Title)),"email") !== False) ||
+			get_class($editableField) == "EditableEmailField");
 	}
 
 	/**
@@ -683,9 +760,13 @@ JS
 		Session::set("FormInfo.{$form->FormName()}.data",$data);
 		Session::clear("FormInfo.{$form->FormName()}.errors");
 
+		$emailField = Null;
 		foreach($this->Fields() as $field) {
 			$messages[$field->Name] = $field->getErrorMessage()->HTML();
-
+			
+			if ((!$emailField) && self::isEmailField($field))
+				$emailField = $field->getFormField();
+			
 			if($field->Required && $field->CustomRules()->Count() == 0) {
 				if(	!isset($data[$field->Name]) ||
 					!$data[$field->Name] ||
@@ -693,6 +774,30 @@ JS
 				){
 					$form->addErrorMessage($field->Name,$field->getErrorMessage()->HTML(),'bad');
 				}
+			}
+		}
+		
+		if ($this->HasHoneyPot) {
+			
+			if ($emailField) {
+				$honeypot = "Confirm_Email"; 
+			} else {
+				$honeypot = "Email";
+			}
+			
+			if (isset($data[$honeypot]) && $data[$honeypot]) {
+				//sucker!
+				
+				//DM: I absolutely cannot coerce silverstripe / the UDF system into showing session
+				//	messages, so let's just do it the easy way:
+				//header("Location: http://lmgtfy.com/?q=spammer");
+				die("Sorry, submissions are only accepted from hunams.<br /><br />Go away.");
+				
+				
+				$form->sessionMessage("Only humans are allowed to fill out this form.","bad");
+				
+				$this->redirectBack();
+				return False;
 			}
 		}
 
