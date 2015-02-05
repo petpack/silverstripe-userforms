@@ -879,6 +879,7 @@ JS
 			}
 
 			foreach($this->EmailRecipients() as $recipient) {
+				$email->clearAttachments();
 				$email->populateTemplate($recipient);
 				$email->populateTemplate($emailData);
 				$email->setFrom($recipient->EmailFrom);
@@ -901,6 +902,13 @@ JS
 						$email->setTo($submittedFormField->Value);
 					}
 				}
+				
+				//attached file:
+				if ($recipient->AttachedFileID != 0) {
+					$file = $recipient->AttachedFile();
+					$email->attachFile($file->getFullPath(),$file->Filename);
+				}
+				
 				$recipient->extend('onBeforeSend', $email);
 				if($recipient->SendPlain) {
 					$body = strip_tags($recipient->EmailBody) . "\n ";
@@ -977,7 +985,8 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 	static $has_one = array(
 		'Form' => 'UserDefinedForm',
 		'SendEmailFromField' => 'EditableFormField',
-		'SendEmailToField' => 'EditableFormField'
+		'SendEmailToField' => 'EditableFormField',
+		'AttachedFile' => 'File',
 	);
 
 	/**
@@ -994,6 +1003,11 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 			new CheckboxField('SendPlain', _t('UserDefinedForm.SENDPLAIN', 'Send Email as Plain Text (HTML will be stripped)')),
 			new TextareaField('EmailBody', _t('UserDefinedForm.EMAILBODY','Body'))
 		);
+		
+		$upload = new FileUploadField('AttachedFile',"File Attachment");
+		UploadFolderManager::setFieldUploadFolder($upload,PetPackAssetAdmin::clientUploadDir());
+		
+		$fields->insertAfter($upload,"EmailBody");
 
 		if($this->Form()) {
 			$validEmailFields = DataObject::get("EditableEmailField", "\"ParentID\" = '" . (int)$this->FormID . "'");
@@ -1019,6 +1033,7 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 				$fields->insertAfter(new DropdownField('SendEmailToFieldID', _t('UserDefinedForm.ORSELECTAFIELDTOUSEASTO', '.. or Select a Field to use as the To Address'), $multiOptionFields, '', null, ""), 'EmailAddress');
 			}
 		}
+		
 		$this->extend('updateCMSFields', $fields);
 
 		return $fields;
