@@ -791,7 +791,7 @@ JS
 				//DM: I absolutely cannot coerce silverstripe / the UDF system into showing session
 				//	messages, so let's just do it the easy way:
 				//header("Location: http://lmgtfy.com/?q=spammer");
-				die("Sorry, submissions are only accepted from hunams.<br /><br />Go away.");
+				die("Sorry, submissions are only accepted from humans.");
 				
 				
 				$form->sessionMessage("Only humans are allowed to fill out this form.","bad");
