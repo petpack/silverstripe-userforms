@@ -55,9 +55,9 @@ class UserDefinedForm extends Page {
 	 *
 	 * @return FieldSet
 	 */
-	public function getCMSFields() {
+	public function getCMSFields($params = null) {
 		self::disableCMSFieldsExtensions();
-		$fields = parent::getCMSFields();
+		$fields = parent::getCMSFields($params);
 
 		// define tabs
 		$fields->findOrMakeTab('Root.Content.Form', _t('UserDefinedForm.FORM', 'Form'));
@@ -159,7 +159,7 @@ class UserDefinedForm extends Page {
 	/**
 	 * Roll back a form to a previous version.
 	 *
-	 * @param String|int Version to roll back to
+	 * @param String|SS_Int Version to roll back to
 	 */
 	public function doRollbackTo($version) {
 		parent::doRollbackTo($version);
@@ -236,8 +236,8 @@ class UserDefinedForm extends Page {
 	 *
 	 * @return Page
 	 */
-	public function duplicate() {
-		$page = parent::duplicate();
+	public function duplicate($doWrite = true) {
+		$page = parent::duplicate($doWrite);
 
 		// the form fields
 		if($this->Fields()) {
@@ -488,7 +488,7 @@ class UserDefinedForm_Controller extends Page_Controller {
 	/**
 	 * Indicates whether a field counts as an email field.
 	 * @param EditableFormField $editableField
-	 * @return boolean
+	 * @return SS_Boolean
 	 */
 	static public function isEmailField($editableField) {
 		//there are a few things which could be an 'email' field:
@@ -1039,12 +1039,12 @@ class UserDefinedForm_EmailRecipient extends DataObject {
 		return $fields;
 	}
 
-	function canEdit() {
-		return $this->Form()->canEdit();
+	function canEdit($member = NULL) {
+		return $this->Form()->canEdit($member);
 	}
 
-	function canDelete() {
-		return $this->Form()->canDelete();
+	function canDelete($member = NULL) {
+		return $this->Form()->canDelete($member);
 	}
 
 }

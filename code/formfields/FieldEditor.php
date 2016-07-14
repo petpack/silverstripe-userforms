@@ -20,7 +20,7 @@ class FieldEditor extends FormField {
 	/**
 	 * Returns whether a user can edit the form
 	 *
-	 * @return boolean
+	 * @return SS_Boolean
 	 */
 	public function canEdit() {
 		if($this->readonly) return false;
@@ -33,7 +33,7 @@ class FieldEditor extends FormField {
 	 * check if they can delete themselves but this counts as an {@link self::canEdit()}
 	 * function rather than a delete
 	 *
-	 * @return boolean
+	 * @return SS_Boolean
 	 */
 	public function canDelete() {
 		if($this->readonly) return false;
@@ -117,7 +117,8 @@ class FieldEditor extends FormField {
 	 *
 	 * @param DataObject Record to Save it In
 	 */
-	function saveInto(DataObject $record) {
+	function saveInto(DataObjectInterface $record) {
+		// @fixme: is this right?
 		$name = $this->name;
 		$fieldSet = $record->$name();
 		

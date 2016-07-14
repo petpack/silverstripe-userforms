@@ -46,7 +46,7 @@ class SubmittedFormReportField extends FormField {
 	/**
 	 * ID of this forms record
 	 * 
-	 * @return int
+	 * @return SS_Int
 	 */
 	function RecordID() {
 		return $this->form->getRecord()->ID;
@@ -150,7 +150,7 @@ class SubmittedFormReportField extends FormField {
 	/**
 	 * Delete all the submissions listed in the user defined form
 	 *
-	 * @return Redirect|Boolean
+	 * @return Redirect|SS_Boolean
 	 */
 	public function deletesubmissions($id = false) {
 		$isRunningTests = (class_exists('SapphireTest', false) && SapphireTest::is_running_test());
@@ -181,7 +181,7 @@ class SubmittedFormReportField extends FormField {
 	/**
 	 * Delete a given submission from a user defined form
 	 *
-	 * @return Redirect|Boolean
+	 * @return Redirect|SS_Boolean
 	 */
 	public function deletesubmission($id = false) {
 		$isRunningTests = (class_exists('SapphireTest', false) && SapphireTest::is_running_test());
